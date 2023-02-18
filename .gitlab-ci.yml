@@ -1,0 +1,44 @@
+variables:
+  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository
+    -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version --no-transfer-progress"
+
+image: maven:3.6.3-openjdk-11
+
+cache:
+  paths:
+    - ".m2/repository"
+
+stages:
+  - build
+  - test
+  - pages
+
+Build the project:
+  stage: build
+  script:
+    - mvn clean compile
+
+Run integration tests:
+  stage: test
+  only:
+    - master
+  script:
+    - mvn verify
+
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - ./target/site/serenity
+
+pages:
+  when: always
+  stage: .post
+  script:
+    - mkdir ./public
+    - cp -r ./target/site/serenity/* ./public/
+    - echo "Serenity report https://illia_skapchuk.gitlab.io/serenity-cucumber-screenplay-rest/"
+  artifacts:
+    paths:
+      - public
